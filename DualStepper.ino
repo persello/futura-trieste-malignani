@@ -12,7 +12,7 @@ uint16_t lastRPM1_1000;       // milliRPM
 uint16_t lastRPM2_1000;       // milliRPM
 uint8_t enable;               // Driver enable
 
-void setup() {
+void setupMotors() {
   //////// IMPOSTAZIONE I/O ////////
   pinMode(PIN_STEP1, OUTPUT);
   pinMode(PIN_STEP2, OUTPUT);
@@ -20,12 +20,11 @@ void setup() {
   pinMode(PIN_DIR2, OUTPUT);
   pinMode(PIN_ENABLE, OUTPUT);
 
-  setSpeed1(100000);
-  setSpeed2(100000);
-  Serial.begin(115200);
+  setSpeed1(0);
+  setSpeed2(0);
 }
 
-void loop() {
+void updateMotors() {
   //////// GENERAZIONE ONDA QUADRA STEP OUT, NON BLOCCANTE, DUTY CYCLE 0.5 ////////
   digitalWrite(PIN_STEP1, (micros() % period1) > (period1 / 2));
   digitalWrite(PIN_STEP2, (micros() % period2) > (period2 / 2));
