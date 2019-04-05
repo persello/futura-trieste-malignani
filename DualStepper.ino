@@ -24,7 +24,7 @@ void setupMotors() {
   setSpeed2(0);
 }
 
-void updateMotors() {
+void updateMotors(void) {
   //////// GENERAZIONE ONDA QUADRA STEP OUT, NON BLOCCANTE, DUTY CYCLE 0.5 ////////
   digitalWrite(PIN_STEP1, (micros() % period1) > (period1 / 2));
   digitalWrite(PIN_STEP2, (micros() % period2) > (period2 / 2));
