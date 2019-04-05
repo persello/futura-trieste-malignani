@@ -6,10 +6,8 @@
 
 #define MOTOR_STEPS     200   // Step per revolution del motore
 
-uint32_t period1;             // us
-uint32_t period2;             // us
-uint16_t lastRPM1_1000;       // milliRPM
-uint16_t lastRPM2_1000;       // milliRPM
+uint32_t lastRPM1_1000;       // milliRPM
+uint32_t lastRPM2_1000;       // milliRPM
 uint8_t enable;               // Driver enable
 
 void setupMotors() {
@@ -24,10 +22,27 @@ void setupMotors() {
   setSpeed2(0);
 }
 
+volatile uint16_t period1 = 0;    // 1 = 10us
+volatile uint16_t period2 = 0;    // idem...
+volatile uint16_t count1 = 0;     // ...
+volatile uint16_t count2 = 0;     // ...
 void updateMotors(void) {
   //////// GENERAZIONE ONDA QUADRA STEP OUT, NON BLOCCANTE, DUTY CYCLE 0.5 ////////
-  digitalWrite(PIN_STEP1, (micros() % period1) > (period1 / 2));
-  digitalWrite(PIN_STEP2, (micros() % period2) > (period2 / 2));
+  if(count1 > period1) {
+    PORTB |= (1 << PB5);
+    count1 = 0;
+  } else {
+    PORTB &= ~(1 << PB5);
+  }
+  if(count2 > period2) {
+    PORTB |= (1 << PB3);
+    count2 = 0;
+  } else {
+    PORTB &= ~(1 << PB3);
+  }
+  count1++;
+  count2++;
+  //PINB |= (1 << PB3);
 }
 
 void setSpeed1(int32_t rpm_1000) {
@@ -35,7 +50,7 @@ void setSpeed1(int32_t rpm_1000) {
   lastRPM1_1000 = rpm_1000;    // Salvo ultimo valore di velocita in caso di ricalcolo
   digitalWrite(PIN_DIR1, rpm_1000 > 0);
   digitalWrite(PIN_ENABLE, lastRPM1_1000 == 0 && lastRPM2_1000 == 0);
-  period1 = 60000000000UL / (abs(rpm_1000) * (uint32_t)MOTOR_STEPS * 16);
+  period1 = 6000000000UL / ((abs(rpm_1000) * (uint32_t)MOTOR_STEPS * 16));
 }
 
 void setSpeed2(int32_t rpm_1000) {
@@ -43,5 +58,5 @@ void setSpeed2(int32_t rpm_1000) {
   lastRPM2_1000 = rpm_1000;    // Salvo ultimo valore di velocita in caso di ricalcolo
   digitalWrite(PIN_DIR2, rpm_1000 < 0);
   digitalWrite(PIN_ENABLE, lastRPM1_1000 == 0 && lastRPM2_1000 == 0);
-  period2 = 60000000000UL / (abs(rpm_1000) * (uint32_t)MOTOR_STEPS * 16);
+  period2 = 6000000000UL / ((abs(rpm_1000) * (uint32_t)MOTOR_STEPS * 16));
 }
