@@ -5,12 +5,15 @@
 #include <Wire.h>
 
 double setpoint, input, output;
+uint32_t kp, ki, kd;
+double offset = 0.0;
+uint32_t limit = 90000;
 
 MPU6050 mpu(Wire);
-PID pid(&input, &output, &setpoint, 5000, 0, 600, DIRECT);
+PID pid(&input, &output, &setpoint, kp, ki, kd, DIRECT);
 void setup()
 {
-  Serial.begin(115200);
+  Serial.begin(57600);
   Timer1.initialize(10);
   setupMotors();
   Wire.begin();
@@ -19,15 +22,37 @@ void setup()
   Timer1.attachInterrupt(update);
   setpoint = 0;
   pid.SetMode(AUTOMATIC);
-  pid.SetOutputLimits(-80000, 80000);
+  pid.SetOutputLimits(-200000, 200000);
+  pid.SetSampleTime(5);
 }
 
 void loop()
 {
   mpu.update();
-  input = mpu.getAngleY();
+  input = mpu.getAngleY() + offset;
   pid.Compute();
-  Serial.println(output);
+  Serial.println(mpu.getAngleY());
+  if (Serial.available()) {
+    switch (Serial.read()) {
+      case 'p':
+        kp = Serial.parseInt();
+        break;
+      case 'i':
+        ki = Serial.parseInt();
+        break;
+      case 'd':
+        kd = Serial.parseInt();
+        break;
+      case 'o':
+        offset = Serial.parseFloat();
+        break;
+      case 'l':
+        limit = Serial.parseInt();
+        pid.SetOutputLimits(-limit, limit);
+        break;
+    }
+  }
+  pid.SetTunings(kp, ki, kd);
   setSpeed1(-output);
   setSpeed2(-output);
   update();
