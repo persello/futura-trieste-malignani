@@ -4,14 +4,14 @@
 #define PIN_DIR2         10   // Direction out
 #define PIN_ENABLE        7
 
-#define MOTOR_STEPS     200   // Step per revolution del motore
+#define MOTOR_STEPS     200   // Motor steps per revolution
 
 uint32_t lastRPM1_1000;       // milliRPM
 uint32_t lastRPM2_1000;       // milliRPM
 uint8_t enable;               // Driver enable
 
-void setupMotors() {
-  //////// IMPOSTAZIONE I/O ////////
+void setupMotors(void) {
+  //////// I/O SETTING ////////
   pinMode(PIN_STEP1, OUTPUT);
   pinMode(PIN_STEP2, OUTPUT);
   pinMode(PIN_DIR1, OUTPUT);
@@ -23,11 +23,12 @@ void setupMotors() {
 }
 
 volatile uint16_t period1 = 0;    // 1 = 10us
-volatile uint16_t period2 = 0;    // idem...
+volatile uint16_t period2 = 0;    // same...
 volatile uint16_t count1 = 0;     // ...
 volatile uint16_t count2 = 0;     // ...
+
 void updateMotors(void) {
-  //////// GENERAZIONE ONDA QUADRA STEP OUT, NON BLOCCANTE, DUTY CYCLE 0.5 ////////
+  //////// PULSE GENERATION, NON-BLOCKING ////////
   if(count1 > period1) {
     PORTB |= (1 << PB5);
     count1 = 0;
@@ -40,23 +41,25 @@ void updateMotors(void) {
   } else {
     PORTB &= ~(1 << PB3);
   }
+  // Both variables increment every 10us
   count1++;
   count2++;
-  //PINB |= (1 << PB3);
 }
 
 void setSpeed1(int32_t rpm_1000) {
-  // Passi al minuto = rpm * stepsMotore * microSteps
-  lastRPM1_1000 = rpm_1000;    // Salvo ultimo valore di velocita in caso di ricalcolo
+  lastRPM1_1000 = rpm_1000;    // Last speed value gets saved
   digitalWrite(PIN_DIR1, rpm_1000 > 0);
   digitalWrite(PIN_ENABLE, lastRPM1_1000 == 0 && lastRPM2_1000 == 0);
+  // Step per minute = rpm * motorSteps * microSteps
+  // Conversion from step per minute to step per 10us
   period1 = 6000000000UL / ((abs(rpm_1000) * (uint32_t)MOTOR_STEPS * 16));
 }
 
 void setSpeed2(int32_t rpm_1000) {
-  // Passi al minuto = rpm * stepsMotore * microSteps
-  lastRPM2_1000 = rpm_1000;    // Salvo ultimo valore di velocita in caso di ricalcolo
+  lastRPM2_1000 = rpm_1000;    // Last speed value gets saved
   digitalWrite(PIN_DIR2, rpm_1000 < 0);
   digitalWrite(PIN_ENABLE, lastRPM1_1000 == 0 && lastRPM2_1000 == 0);
+  // Step per minute = rpm * motorSteps * microSteps
+  // Conversion from step per minute to step per 10us  
   period2 = 6000000000UL / ((abs(rpm_1000) * (uint32_t)MOTOR_STEPS * 16));
 }
